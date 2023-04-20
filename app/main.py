@@ -27,6 +27,22 @@ class ArticleContent(BaseModel):
     text: str
 
 
+class FakeNewsPrediction(BaseModel):
+    message: str
+    label: str
+    prob: float
+
+
+class BiasScorePrediction(BaseModel):
+    message: str
+    bias_score: float
+
+class ExtractedClaim(BaseModel):
+    claim: str
+    truthfulness: str
+    possible_source: str
+
+
 app = FastAPI()
 
 def truncate_string_using_embeddings(string: str, model_name: str, num_tokens: int) -> str:
@@ -40,20 +56,17 @@ def truncate_string_using_embeddings(string: str, model_name: str, num_tokens: i
 async def root():
     return {"message": "Hello World"}
 
-@app.post("/predict-fake-news")
-async def root(article_content: ArticleContent):
+@app.post("/predict-fake-news") 
+async def root(article_content: ArticleContent) -> FakeNewsPrediction:
     input_text = truncate_string_using_embeddings(article_content.text, "text-ada-001", 2044)
     ft_model = 'ada:ft-personal-2023-04-18-19-13-19'
     res = openai.Completion.create(model=ft_model, prompt=input_text + '\n\n###\n\n', max_tokens=1, temperature=0, logprobs=10)
     label = res['choices'][0]['text']
-    return {
-        "message": "Success",
-        "label": label,
-        "prob": np.exp(res['choices'][0]['logprobs']['top_logprobs'][0][label])
-    }
+    prob = np.exp(res['choices'][0]['logprobs']['top_logprobs'][0][label])
+    return FakeNewsPrediction(message="Success", label=label, prob=prob)
 
 @app.post("/predict-bias-score")
-async def root(article_content: ArticleContent):
+async def root(article_content: ArticleContent) -> BiasScorePrediction:
     input_text = article_content.text
     # Tokenize the input text
     input_tokens = bias_tokenizer.tokenize(input_text)
@@ -76,13 +89,10 @@ async def root(article_content: ArticleContent):
             bias_scores.append(bias_score)
 
     avg_bias_score = sum(bias_scores) / len(bias_scores)
-    return {
-        "message": "Success",
-        "bias_score": avg_bias_score,
-    }
+    return BiasScorePrediction(message="Success", bias_score=avg_bias_score)
 
 @app.post("/extract-claims")
-async def root(article_content: ArticleContent):
+async def root(article_content: ArticleContent) -> list[ExtractedClaim]:
     input_text = article_content.text
     example_response = """
 1. President George W. Bush claimed that Saddam Hussein was on the verge of developing nuclear weapons and was hiding other weapons of mass destruction as a key reason for invading Iraq. 
@@ -120,11 +130,10 @@ async def root(article_content: ArticleContent):
     response_content = response["choices"][0]["message"]["content"]
     for claim_data in response_content.split("\n\n"):
         claim_data = claim_data.split("\n")
-        response_data.append({
-            "claim": claim_data[0][claim_data[0].find(" ") + 1:],
-            "truthfulness": claim_data[1][claim_data[0].find("* Truthfulness: ") + 21:],
-            "possible_source": claim_data[2][claim_data[0].find("* Source: ") + 15:]
-        })
+        claim = claim_data[0][claim_data[0].find(" ") + 1:]
+        truthfulness = claim_data[1][claim_data[0].find("* Truthfulness: ") + 21:]
+        possible_source = claim_data[2][claim_data[0].find("* Source: ") + 15:]
+        response_data.append(ExtractedClaim(claim=claim, truthfulness=truthfulness, possible_source=possible_source))
     
     return response_data
 
