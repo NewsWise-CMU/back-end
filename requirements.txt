@@ -1,0 +1,10 @@
+fastapi[all]
+python-dotenv
+openai
+requests
+numpy
+tiktoken
+torch
+nltk
+transformers
+pydantic
