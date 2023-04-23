@@ -1,8 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 import os
 from dotenv import load_dotenv
 import openai
-import requests
 import numpy as np
 import tiktoken
 import torch
@@ -26,6 +25,9 @@ bias_model = AutoModelForSequenceClassification.from_pretrained(bias_model_name)
 class ArticleContent(BaseModel):
     text: str
 
+class ArticleClaimContent(ArticleContent):
+    claim: str
+
 
 class FakeNewsPrediction(BaseModel):
     message: str
@@ -42,6 +44,15 @@ class ExtractedClaim(BaseModel):
     truthfulness: str
     possible_source: str
 
+class ExtractedClaims(BaseModel):
+    message: str
+    claims: list[ExtractedClaim]
+
+class ClaimReasoning(BaseModel):
+    message: str
+    article_summary : str
+    reasoning: str
+
 
 app = FastAPI()
 
@@ -53,11 +64,11 @@ def truncate_string_using_embeddings(string: str, model_name: str, num_tokens: i
 
 
 @app.get("/")
-async def root():
-    return {"message": "Hello World"}
+async def root(request: Request, response: Response):
+    return {"message": "Welcome to NewsWise!"}
 
-@app.post("/predict-fake-news") 
-async def root(article_content: ArticleContent) -> FakeNewsPrediction:
+@app.post("/predict-fake-news")
+async def root(article_content: ArticleContent, request: Request, response: Response) -> FakeNewsPrediction:
     input_text = truncate_string_using_embeddings(article_content.text, "text-ada-001", 2044)
     ft_model = 'ada:ft-personal-2023-04-18-19-13-19'
     res = openai.Completion.create(model=ft_model, prompt=input_text + '\n\n###\n\n', max_tokens=1, temperature=0, logprobs=10)
@@ -66,7 +77,7 @@ async def root(article_content: ArticleContent) -> FakeNewsPrediction:
     return FakeNewsPrediction(message="Success", label=label, prob=prob)
 
 @app.post("/predict-bias-score")
-async def root(article_content: ArticleContent) -> BiasScorePrediction:
+async def root(article_content: ArticleContent, request: Request, response: Response) -> BiasScorePrediction:
     input_text = article_content.text
     # Tokenize the input text
     input_tokens = bias_tokenizer.tokenize(input_text)
@@ -92,7 +103,7 @@ async def root(article_content: ArticleContent) -> BiasScorePrediction:
     return BiasScorePrediction(message="Success", bias_score=avg_bias_score)
 
 @app.post("/extract-claims")
-async def root(article_content: ArticleContent) -> list[ExtractedClaim]:
+async def root(article_content: ArticleContent, request: Request, response: Response) -> list[ExtractedClaim]:
     input_text = article_content.text
     example_response = """
 1. President George W. Bush claimed that Saddam Hussein was on the verge of developing nuclear weapons and was hiding other weapons of mass destruction as a key reason for invading Iraq. 
@@ -136,5 +147,3 @@ async def root(article_content: ArticleContent) -> list[ExtractedClaim]:
         response_data.append(ExtractedClaim(claim=claim, truthfulness=truthfulness, possible_source=possible_source))
     
     return response_data
-
- 
