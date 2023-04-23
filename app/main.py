@@ -67,7 +67,7 @@ def truncate_string_using_embeddings(string: str, model_name: str, num_tokens: i
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Welcome to NewsWise"}
 
 @app.post("/predict-fake-news") 
 async def root(article_content: ArticleContent) -> FakeNewsPrediction:
