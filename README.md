@@ -7,8 +7,8 @@
 [See here for more details on installation](https://fastapi.tiangolo.com/tutorial/first-steps/)
 
 ## To Run with Docker
-- `docker build -t myimage .`
-- `docker run --name mycontainer -p 80:80 myimage`
+- `sudo docker build -t myimage .`
+- `sudo docker run -d --name mycontainer -p 443:443 myimage`
 
 [See here for more details on running this app using docker](https://fastapi.tiangolo.com/deployment/docker/)
 
