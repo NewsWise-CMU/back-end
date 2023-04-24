@@ -14,7 +14,6 @@
 - `docker build -t fake_news_be -f $(PWD)/dev.Dockerfile .`
 - `docker run -it -p 8000:8000 -v $(PWD)/app:/app/ fake_news_be`
 
-
 ## To Run with Docker
 - `docker build -t fake_news_be .`
 - `docker run -p 80:80 fake_news_be`

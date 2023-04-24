@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 import openai
@@ -56,6 +57,18 @@ class ClaimReasoning(BaseModel):
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 def truncate_string_using_embeddings(string: str, model_name: str, num_tokens: int) -> str:
     """Returns the number of tokens in a text string."""
     encoding = tiktoken.encoding_for_model(model_name)
@@ -64,8 +77,8 @@ def truncate_string_using_embeddings(string: str, model_name: str, num_tokens: i
 
 
 @app.get("/")
-async def root(request: Request, response: Response):
-    return {"message": "Welcome to NewsWise!"}
+async def root():
+    return {"message": "Welcome to NewsWise"}
 
 @app.post("/predict-fake-news")
 async def root(article_content: ArticleContent, request: Request, response: Response) -> FakeNewsPrediction:
