@@ -20,6 +20,7 @@ wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 # build and run image
 git pull
 sudo docker rm -f mycontainer
-sudo docker build -t myimage .
+sudo docker image rm -f myimage
+sudo docker build --no-cache -t myimage .
 sudo docker run -d --name mycontainer -p 443:443 myimage
 # sudo uvicorn app.main:app --host 0.0.0.0 --port 443 --ssl-keyfile privkey.pem --ssl-certfile fullchain.pem
