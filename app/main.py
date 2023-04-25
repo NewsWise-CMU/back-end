@@ -44,8 +44,7 @@ class BiasScorePrediction(BaseResponse):
 
 class ExtractedClaim(BaseModel):
     claim: str
-    truthfulness: str
-    possible_source: str
+    bias: str
 
 class ExtractedClaims(BaseResponse):
     claims: list[ExtractedClaim]
@@ -100,7 +99,7 @@ async def root() -> ArticleData:
 
 @app.post("/predict-fake-news")
 async def root(article_content: ArticleContent) -> FakeNewsPrediction:
-    ft_model = 'ada:ft-personal-2023-04-18-19-13-19'
+    ft_model = 'ada:ft-personal-2023-04-25-06-45-05'
     try:
         add_article_data(article_content.text)
         input_text = truncate_string_using_embeddings(article_content.text, "text-ada-001", 2044)
@@ -145,34 +144,17 @@ async def root(article_content: ArticleContent) -> BiasScorePrediction:
 @app.post("/extract-claims")
 async def root(article_content: ArticleContent) -> ExtractedClaims:
     input_text = article_content.text
-    example_response = """
-1. President George W. Bush claimed that Saddam Hussein was on the verge of developing nuclear weapons and was hiding other weapons of mass destruction as a key reason for invading Iraq. 
-    * Truthfulness: Possibly True
-    * Source: Politifact: Iraq war: 10 years on, where are the key players now?
-
-2. The real reason for the invasion of Iraq was a long-range plan for "regime change" in the Middle East. 
-    * Truthfulness: Opinion/Speculation
-    * Source: N/A
-
-3. The lack of evidence connecting Saddam Hussein to the 9/11 attacks made it difficult to rally the American people to support a war against Baghdad. 
-    * Truthfulness: Possibly Fake
-    * Source: The New York Times: Bush's Case for War: A Realpolitik Primer
-
-4. The U.S. leadership cadre's worldview demanded a mortally dangerous Iraq, and informants who were willing to tell the tale of pending atomic weapons lowered the threshold for proof. 
-    * Truthfulness: Possibly Fake
-    * Source: The New York Times: Bush's Case for War: A Realpolitik Primer
-"""
-    valid_sources = "[encylopedia, textbook, sources with first hand reporting, research oriented magazine, Associated Press, BBC, C-SPAN, The Bureau of Investigative Journalism, The Economist, NPR, ProPublica, Reuters, USA Today, The Wall Street Journal, FAIR, Politifact]"
-    invalid_sources = "[Fox News, The Guardian, Twitter, The Washington Post, The article itself.]"
-
+    example_output = """1. The previous charge d'affaires, Scott Hamilton, left Cuba earlier this month after the evacuation of all non-essential staff and relatives.
+- Bias: The article does not provide any information on why Hamilton left Cuba, which could suggest a lack of transparency in the evacuation process.
+2. Gumbiner will arrive at a time of heightened tensions between the United States and Cuba.
+- Bias: The article does not provide any information on why tensions have increased, which could suggest a lack of transparency in the diplomatic relationship between the two countries."""
     try:
         add_article_data(input_text)
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are NewsWise, a fact and claim detector responsible for extracting the most important facts and claims from a piece of text and fact checking them with the most credible sources. Your goal is to find as many relevent, false claims as possible."},
-                {"role": "user", "content": "I will be providing an article and you will give me a numbered list of the top 10 or less most important claims and facts relevant to the argument of the following article that deserve to be verified. Focus on claims that are false. In this list, discuss the truthfulness of each claim and add at least one third party source for each one other than the article itself. Give a truthfulness score that is only one of [Possibly True, Possibly False, Unknown, Opinion/Speculation] If the claim is an opinion then specify it. If the truthfulness of the claim cannot be determined then specify that. You should be highly critical of claims before making a decision. If it is a tossup or hard to determine, the class will be unknown. If the article presents an opinion than the truthfulness can only be an Opinion."},
-                {"role": "user", "content": f"The sources should be one of {valid_sources}. Most importantly, make sure that none of the sources are the article itself or in this list: {invalid_sources}. Here is an example of the output required: {example_response}"},
+                {"role": "system", "content": "You are NewsWise, a fact and claim detector responsible for extracting the most important facts and claims from a piece of text and discussing the various biases and stereotypes. Your goal is to find as many relevent, biased claims as possible."},
+                {"role": "user", "content": f"I will be providing an article and you will give me a numbered list of the top 10 most important claims relevant to the argument of the article. In this list, discuss in detail any biases and linguistic techniques used in each claim that need to be acknowledged before taking it to heart. The output should look like this: {example_output}"},
                 {"role": "user", "content": f"Here is the article:"},
                 {"role": "user", "content": input_text}
             ],
@@ -184,9 +166,8 @@ async def root(article_content: ArticleContent) -> ExtractedClaims:
         for claim_data in response_content.split("\n\n"):
             claim_data = claim_data.split("\n")
             claim = claim_data[0][claim_data[0].find(" ") + 1:]
-            truthfulness = claim_data[1][claim_data[0].find("* Truthfulness: ") + 21:]
-            possible_source = claim_data[2][claim_data[0].find("* Source: ") + 15:]
-            response_data.append(ExtractedClaim(claim=claim, truthfulness=truthfulness, possible_source=possible_source))
+            bias = claim_data[1][claim_data[0].find("- Bias: ") + 9:]
+            response_data.append(ExtractedClaim(claim=claim, bias=bias))
     
         return ExtractedClaims(message="Success", claims=response_data)
 
