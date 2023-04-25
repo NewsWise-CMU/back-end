@@ -143,7 +143,7 @@ async def root(article_content: ArticleContent) -> BiasScorePrediction:
         raise HTTPException(status_code=500, detail="Error during inference")
 
 @app.post("/extract-claims")
-async def root(article_content: ArticleContent) -> list[ExtractedClaim]:
+async def root(article_content: ArticleContent) -> ExtractedClaims:
     input_text = article_content.text
     example_response = """
 1. President George W. Bush claimed that Saddam Hussein was on the verge of developing nuclear weapons and was hiding other weapons of mass destruction as a key reason for invading Iraq. 
