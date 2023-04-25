@@ -6,7 +6,7 @@
 
 ## To Run Locally with hotswap
 - `pip install -r requirements.txt`
-- `python -m uvicorn main:app --reload`
+- `python -m uvicorn app.main:app --reload`
 
 [See here for more details on installation](https://fastapi.tiangolo.com/tutorial/first-steps/)
 
