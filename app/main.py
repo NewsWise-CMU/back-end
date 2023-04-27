@@ -68,6 +68,8 @@ app = FastAPI()
 
 origins = [
     "http://localhost:3000",
+    "https://www.news-wise-ai.com/",
+    "https://news-wise-ai.com/"
 ]
 
 app.add_middleware(
