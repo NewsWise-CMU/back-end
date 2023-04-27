@@ -69,7 +69,8 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "https://www.news-wise-ai.com",
-    "https://news-wise-ai.com"
+    "https://news-wise-ai.com",
+    "https://ml-in-practice-front-end-fruy.vercel.app"
 ]
 
 app.add_middleware(
