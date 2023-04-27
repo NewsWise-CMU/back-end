@@ -8,3 +8,5 @@ torch
 nltk
 transformers
 pydantic
+sentry-sdk[fastapi]
+datetime
